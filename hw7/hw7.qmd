@@ -1,0 +1,390 @@
+---
+title: Homework 7 - Creating a resume database
+author: Ryan Collette
+date: last-modified
+format:
+    html:
+        theme: cosmo
+        toc: true
+        embed-resources: true
+        code-copy: true
+---
+
+This is an outline of homework 7, actually its the turnin document. This assignment goes into building a database and looking at how one is laid out. It looks like we are using python to return some tables using our class credentials then answering questions based on those tables.
+
+GITHUB URL:  https://github.com/cmsc-vcu/cmsc508-fa2023-hw7-0xcolley
+
+```{python}
+#| eval: true
+#| echo: false
+import os
+import sys
+import pandas as pd
+from tabulate import tabulate
+from dotenv import load_dotenv
+from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError, ProgrammingError
+from IPython.display import display, Markdown
+```
+```{python}
+#| eval: true
+#| echo: false
+
+# modify config_map to reflect credentials needed by this program
+config_map = {
+    'user':'user',
+    'password':'password',
+    'host':'host',
+    'database':'database'
+}
+# load and store credentials
+load_dotenv()
+config = {}
+for key in config_map.keys():
+    config[key] = os.getenv(config_map[key])
+flag = False
+for param in config.keys():
+    if config[param] is None:
+        flag = True
+        print(f"Missing {config_map[param]} in .env file")
+#if flag:
+#    sys.exit(1)
+```
+```{python}
+#| eval: true
+#| echo: false
+
+# build a sqlalchemy engine string
+engine_uri = f"mysql+pymysql://{config['user']}:{config['password']}@{config['host']}/{config['database']}"
+
+# create a database connection.  THIS IS THE ACTUAL CONNECTION!
+try:
+    cnx = create_engine(engine_uri)
+except ArgumentError as e:
+    print(f"create_engine: Argument Error: {e}")
+    #sys.exit(1)
+except NoSuchModuleError as e:
+    print(f"create_engine: No Such Module Error: {e}")
+    #sys.exit(1)
+except Exception as e:
+    print(f"create_engine: An error occurred: {e}")
+    #sys.exit(1)
+```
+```{python}
+#| echo: false
+#| eval: true
+
+# Do a quick test of the connection and trap the errors better!
+try:
+    databases = pd.read_sql("show databases",cnx)
+except ImportError as e:
+    print(f"Error: {e}")
+except OperationalError as e:
+    print(f"Database/SQL Error:\n{str(e)}\n")
+except ProgrammingError as e:
+    print(f"Programming Error:\n{str(e)}\n")
+except Exception as e:
+    print(f"An error occurred:\n{str(e)}\n")
+
+```
+
+## Overview and description
+
+The project's goal was to both build and fetch data from a database from semi-scratch using the provided parameters. We were given a .sql file that contained directions and a high level description of the database that needed to be built and how it was to interact between the tables. This document provides a way to see the queries in an organized manor that provides context to someone who may not be able to read tables directly out of MySQL. 
+
+## Crows-foot diagram
+
+```{mermaid}
+%%| echo: false
+erDiagram
+    PEOPLE ||--o{ PEOPLESKILLS : "has"
+    PEOPLE ||--o{ PEOPLESKILLS : "has"
+    PEOPLE ||--o{ PEOPLESKILLS : "has"
+    PEOPLE ||--o{ PEOPLE_ROLES : "has"
+    SKILLS ||--o{ PEOPLESKILLS : "assigned_to"
+    ROLES ||--o{ PEOPLE_ROLES : "assigned_to"
+
+    PEOPLE {
+        int people_id PK "Primary Key"
+        varchar people_last_name "Last Name"
+        varchar people_first_name "First Name"
+        varchar email "Email"
+        varchar linkedin_url "LinkedIn URL"
+        varchar headshot_url "Headshot URL"
+        varchar discord_handle "Discord Handle"
+        varchar brief_bio "Brief Bio"
+        date date_joined "Date Joined"
+    }
+
+    SKILLS {
+        int id PK "Primary Key"
+        varchar name "Skill Name"
+        varchar description "Description"
+        varchar tag "Tag"
+        varchar url "URL"
+        varchar time_commitment "Time Commitment"
+    }
+
+    PEOPLESKILLS {
+        int id PK "Primary Key"
+        int skills_id FK "Skill ID"
+        int people_id FK "People ID"
+        date date_acquired "Date Acquired"
+    }
+
+    ROLES {
+        int id PK "Primary Key"
+        varchar name "Role Name"
+        int sort_priority "Sort Priority"
+    }
+
+    PEOPLE_ROLES {
+        int id PK "Primary Key"
+        int people_id FK "People ID"
+        int role_id FK "Role ID"
+        date date_assigned "Date Assigned"
+    }
+```
+
+## Examples of data in the database
+
+For the people, skills, and roles tables, provide a description of each table and it's contents. Then provide a listing of the entire table.
+
+### People table
+
+The *people* table contains elements that describe ... 
+
+Below is a list of data in the *people* table.
+
+```{python}
+#| echo: false
+#| eval: true
+sql = f"""
+select * from people;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### Skills table
+
+The *skills* table contains elements that describe ... 
+
+Below is a list of data in the *skills* table.
+
+```{python}
+#| echo: false
+#| eval: true
+
+## Add code to list roles table here
+sql = f"""
+select * from skills;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### Roles table
+
+The *roles* table contains elements that describe ... 
+
+Below is a list of data in the *roles* table.
+
+```{python}
+#| echo: false
+#| eval: true
+
+## Add code to list roles table here
+sql = f"""
+select * from roles;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+
+## Sample queries
+
+Let's explore the database!
+
+# List skill names, tags, and descriptions ordered by name
+
+(here a sample query)
+
+```{python}
+sql = f"""
+SELECT * FROM people
+"""
+```
+
+
+(and here is a sample result from the query)
+
+```{python}
+#| echo: false
+#| eval: true
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+
+```
+
+
+### List people names and email addresses ordered by last_name
+```{python}
+sql = f"""
+SELECT people_last_name, people_first_name, email FROM people ORDER BY people_last_name ASC;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List skill names of Person 1
+```{python}
+sql = f"""
+SELECT people_last_name, people_first_name, email FROM people ORDER BY people_last_name ASC;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List people names with Skill 6
+```{python}
+sql = f"""
+SELECT p.people_id, p.people_first_name, p.people_last_name, p.email FROM people p JOIN peopleskills ps ON p.people_id = ps.people_id WHERE ps.skills_id = 6;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List people with a DEVELOPER role
+```{python}
+sql = f"""
+SELECT p.people_id, p.people_first_name, p.people_last_name, p.email FROM people p JOIN peopleroles pr ON p.people_id = pr.people_id JOIN roles r ON pr.role_id = r.id WHERE r.name = 'Developer';
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List names and email addresses of people without skills
+```{python}
+sql = f"""
+SELECT p.people_id, p.people_first_name, p.people_last_name, p.email FROM people p LEFT JOIN peopleskills ps ON p.people_id = ps.people_id WHERE ps.id IS NULL;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List names and tags of unused skills
+```{python}
+sql = f"""
+SELECT s.id,s.name,s.tag FROM skills s LEFT JOIN peopleskills ps ON s.id = ps.skills_id WHERE ps.people_id IS NULL;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List people names and skill names with the BOSS role
+```{python}
+sql = f"""
+SELECT p.people_first_name,p.people_last_name,s.name AS skill_name FROM people p JOIN peopleroles pr ON p.people_id = pr.people_id JOIN roles r ON pr.role_id = r.id LEFT JOIN peopleskills ps ON p.people_id = ps.people_id LEFT JOIN skills s ON ps.skills_id = s.id WHERE r.name = 'BOSS';
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+### List ids and names of unused roles
+```{python}
+sql = f"""
+SELECT r.id, r.name FROM roles r LEFT JOIN peopleroles pr ON r.id = pr.role_id WHERE pr.people_id IS NULL;
+"""
+## Add code to list roles table here
+try:
+    df = pd.read_sql(sql,cnx)
+    df
+except Exception as e:
+    message = str(e)
+    print(f"An error occurred:\n\n{message}\n\nIgnoring and moving on.")
+    df = pd.DataFrame()
+df
+```
+
+## Reflection
+
+This was a really well structured assignment and provided a good basis and testing environment for beginning to build fully functional databases from scratch. I felt like it was completely fair in what it was asking and well executed as an assignment. I didn't have any large errors or holdups that prevented me from completing the assignment. It allowed for me to get a better grip on doing some of these heavier operations by myself.
+
